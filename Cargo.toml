@@ -1,4 +1,3 @@
-
 [package]
 name = "cosmic-applet-friday-countdown"
 version = "0.1.0"
@@ -8,10 +7,11 @@ description = "COSMIC panel applet: visible only on Fridays, counts down the min
 
 [dependencies]
 chrono = "0.4"
-once_cell = "1"
+tokio = { version = "1", features = ["time"] }
 
 # libcosmic isn't published on crates.io — pull it straight from the
 # COSMIC toolkit repo, same as every other applet in pop-os/cosmic-applets.
+# NB: the crate inside that repo is actually named `cosmic`, not `libcosmic`.
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false

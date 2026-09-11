@@ -3,20 +3,14 @@
 use std::ops::Div;
 use std::time::Duration;
 
-use chrono::{DateTime, Datelike, Local, NaiveTime, Weekday};
+use chrono::{DateTime, Datelike, Local, NaiveTime, Timelike, Weekday};
 use cosmic::app::{Core, Task};
-use cosmic::iced::{time, Subscription};
-use cosmic::widget::{self, autosize};
+use cosmic::iced::futures::channel::mpsc;
+use cosmic::iced::futures::sink::SinkExt;
+use cosmic::iced::futures::Stream;
+use cosmic::iced::{stream, Subscription};
+use cosmic::widget;
 use cosmic::{Application, Element};
-use once_cell::sync::Lazy;
-
-// Panel applets are separate layer-shell windows that do NOT auto-resize to
-// their content by default — unlike the fixed-size icon buttons most
-// applets use, our content's width varies (a few digits vs. a beer emoji),
-// so we need to explicitly wrap the view in `autosize` and give it a
-// stable id so iced can track the same autosized window across redraws.
-static AUTOSIZE_ID: Lazy<cosmic::widget::Id> =
-	Lazy::new(|| cosmic::widget::Id::new("friday-countdown-autosize"));
 
 /// Unique app id. Must match the `Exec`/`StartupWMClass` in the .desktop
 /// file so cosmic-panel and the applet picker can find this applet.
@@ -24,10 +18,6 @@ const APP_ID: &str = "dk.bjarkebjarke.CosmicAppletFridayCountdown";
 
 /// The hour (24h, local time) the countdown targets. 14 == 2 PM.
 const TARGET_HOUR: u32 = 14;
-
-/// How often the clock is re-checked. A minute-resolution display doesn't
-/// need anything faster, but 10s keeps the switch-over to 🍺 feeling snappy.
-const TICK: Duration = Duration::from_secs(10);
 
 pub struct AppModel {
 	core: Core,
@@ -72,22 +62,51 @@ impl Application for AppModel {
 	fn view(&self) -> Element<'_, Self::Message> {
 		// Only ever show anything on Friday. Every other day this renders
 		// a zero-size element, so the applet takes up no room in the panel.
-		let content: Element<Self::Message> = if self.now.weekday() != Weekday::Fri {
+		let content: Element<'_, Self::Message> = if self.now.weekday() != Weekday::Fri {
 			widget::Space::new().into()
 		} else {
 			let label = countdown_label(self.now);
 			self.core.applet.text(label).into()
 		};
 
-		// Without this, the applet's layer-shell window stays at its
-		// default size instead of growing to fit the text/emoji, which is
-		// why nothing appeared to render.
-		autosize::autosize(content, AUTOSIZE_ID.clone()).into()
+		// `Context::autosize_window` (not a bare `autosize` free function)
+		// is the applet-aware version: besides resizing the layer-shell
+		// window to fit the content, it also clamps to the panel's own
+		// suggested size limits. Without it the applet's window stays at
+		// its default size instead of growing to fit the text/emoji.
+		self.core.applet.autosize_window(content).into()
 	}
 
 	fn subscription(&self) -> Subscription<Self::Message> {
-		time::every(TICK).map(|_| Message::Tick)
+		// `Subscription::run` takes a bare fn pointer (no captures needed
+		// here) that builds the stream; iced/cosmic use the pointer itself
+		// to identify the subscription, so no separate id is needed.
+		Subscription::run(minute_tick_stream)
 	}
+}
+
+/// A stream that yields `Message::Tick` right at the top of every minute —
+/// the same instant COSMIC's own clock applet updates — by sleeping for
+/// exactly the remaining time each cycle instead of polling at a fixed
+/// interval that would slowly drift out of phase with it.
+fn minute_tick_stream() -> impl Stream<Item = Message> {
+	stream::channel(1, |mut output: mpsc::Sender<Message>| async move {
+		loop {
+			let now = Local::now();
+			// Remaining time to the next :00, including the fractional
+			// second, so each wakeup lands as close to the boundary as
+			// possible rather than drifting a little further each cycle.
+			let secs_left = 59 - now.second().min(59) as u64;
+			let sleep_for = Duration::from_secs(secs_left) + Duration::from_secs(1)
+				- Duration::from_nanos(u64::from(now.timestamp_subsec_nanos()));
+
+			tokio::time::sleep(sleep_for).await;
+
+			// If the receiving end is gone the applet is shutting down;
+			// ignore the error and let the loop (and process) end naturally.
+			let _ = output.send(Message::Tick).await;
+		}
+	})
 }
 
 /// Minutes remaining until 2 PM, or a beer emoji once 2 PM has passed.

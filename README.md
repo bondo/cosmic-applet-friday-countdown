@@ -8,7 +8,7 @@ A tiny panel applet for the COSMIC desktop (System76's `cosmic-panel` / `cosmic-
 - On Friday, before 2 PM local time: shows the minutes remaining, e.g. `(37 mins)`.
 - On Friday, at/after 2 PM local time: shows 🍺.
 
-It re-checks the clock every 10 seconds (see `TICK` in `src/app.rs`).
+It re-checks the clock at the top of every minute.
 
 ## Project layout
 
@@ -24,9 +24,9 @@ cosmic-applet-friday-countdown/
 
 ## Build
 
-Requires a Rust toolchain and the system libraries COSMIC apps need
-(Wayland, `libxkbcommon`, fontconfig, expat, etc. — the same deps any
-`libcosmic` project needs).
+Requires Rust **1.93 or newer** (libcosmic's current `rust-version`) and the
+system libraries COSMIC apps need (Wayland, `libxkbcommon`, fontconfig,
+expat, etc.).
 
 **Debian/Ubuntu/Pop!\_OS:**
 
@@ -55,6 +55,13 @@ cargo build --release
 (If you build outside the shell — e.g. from an editor's integrated
 terminal — make sure it's launched from within `nix-shell`/`nix develop`
 too, or `pkg-config` won't see the libs.)
+
+Check `rustc --version` inside the shell is actually ≥ 1.93 — `shell.nix`
+pulls `rustc`/`cargo` from whatever `<nixpkgs>` your system channel points
+at, and a channel pinned to a stable NixOS release (rather than
+`nixos-unstable`) can easily lag behind libcosmic's `rust-version`. If it's
+too old, prefer `flake.nix` here (pinned to `nixos-unstable`), or add a
+`rust-overlay`-based toolchain to `shell.nix`.
 
 ## Install
 
@@ -129,7 +136,10 @@ Then either restart `cosmic-panel` (e.g. `killall cosmic-panel`) or log out and 
 ## Notes / things you may want to tweak
 
 - **Target time**: change `TARGET_HOUR` in `src/app.rs` (24h clock, local time).
-- **Update frequency**: change `TICK` in `src/app.rs`.
+- **Update timing**: the subscription wakes up exactly at the top of each
+  minute (see `subscription()` in `src/app.rs`), the same way
+  cosmic-applet-time's own clock does, so both update in the same instant
+  rather than drifting apart on separate fixed-interval polls.
 - **Timezone**: uses `chrono::Local`, i.e. whatever timezone the system is set to.
 - **Day check**: uses `Weekday::Fri` from `chrono`, so it follows the system
   locale's calendar, not a custom definition of "Friday."
