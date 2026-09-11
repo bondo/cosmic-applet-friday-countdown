@@ -100,7 +100,11 @@ fn countdown_label(now: DateTime<Local>) -> String {
 	let target_today = now.date_naive().and_time(target);
 	let minutes_left = (target_today - now.naive_local()).num_minutes().max(0);
 
-	format!("{minutes_left} min(s) to 2PM")
+	if minutes_left == 1 {
+		format!("{minutes_left} min to 2PM")
+	} else {
+		format!("{minutes_left} mins to 2PM")
+	}
 }
 
 #[cfg(test)]
@@ -114,8 +118,9 @@ mod tests {
 
 	#[test]
 	fn counts_down_before_2pm() {
-		assert_eq!(countdown_label(at(13, 45)), "15 min(s) to 2PM");
-		assert_eq!(countdown_label(at(9, 0)), "300 min(s) to 2PM");
+		assert_eq!(countdown_label(at(13, 45)), "15 mins to 2PM");
+		assert_eq!(countdown_label(at(13, 59)), "1 min to 2PM");
+		assert_eq!(countdown_label(at(9, 0)), "300 mins to 2PM");
 	}
 
 	#[test]
