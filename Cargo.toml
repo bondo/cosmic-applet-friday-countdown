@@ -1,7 +1,7 @@
 [package]
 name = "cosmic-applet-friday-countdown"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license = "MPL-2.0"
 description = "COSMIC panel applet: visible only on Fridays, counts down the minutes to 2 PM, then shows a beer emoji"
 

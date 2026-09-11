@@ -5,10 +5,10 @@ use std::time::Duration;
 
 use chrono::{DateTime, Datelike, Local, NaiveTime, Timelike, Weekday};
 use cosmic::app::{Core, Task};
+use cosmic::iced::futures::Stream;
 use cosmic::iced::futures::channel::mpsc;
 use cosmic::iced::futures::sink::SinkExt;
-use cosmic::iced::futures::Stream;
-use cosmic::iced::{stream, Subscription};
+use cosmic::iced::{Subscription, stream};
 use cosmic::widget;
 use cosmic::{Application, Element};
 
