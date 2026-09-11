@@ -106,9 +106,9 @@ fn countdown_label(now: DateTime<Local>) -> String {
 		.ceil() as u32;
 
 	if minutes_left == 1 {
-		format!("{minutes_left} min to 2PM")
+		format!("({minutes_left} min)")
 	} else {
-		format!("{minutes_left} mins to 2PM")
+		format!("({minutes_left} mins)")
 	}
 }
 
@@ -123,10 +123,10 @@ mod tests {
 
 	#[test]
 	fn counts_down_before_2pm() {
-		assert_eq!(countdown_label(at(13, 45, 0)), "15 mins to 2PM");
-		assert_eq!(countdown_label(at(13, 59, 0)), "1 min to 2PM");
-		assert_eq!(countdown_label(at(9, 0, 0)), "300 mins to 2PM");
-		assert_eq!(countdown_label(at(13, 45, 30)), "15 mins to 2PM");
+		assert_eq!(countdown_label(at(13, 45, 0)), "(15 mins)");
+		assert_eq!(countdown_label(at(13, 59, 0)), "(1 min)");
+		assert_eq!(countdown_label(at(9, 0, 0)), "(300 mins)");
+		assert_eq!(countdown_label(at(13, 45, 30)), "(15 mins)");
 	}
 
 	#[test]

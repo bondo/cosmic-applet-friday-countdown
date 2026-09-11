@@ -27,26 +27,13 @@
         };
       in
       {
-        devShells.default =
-          with pkgs;
-          mkShell {
-            buildInputs = [
-              wayland
-              libxkbcommon
-              libGL
-              vulkan-loader
-              expat
-              fontconfig
-              freetype
-              libx11
-              libxcursor
-              libxi
-              libxrandr
-              openssl
-              pkg-config
-              rust
-            ];
-          };
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs.libxkbcommon
+            pkgs.pkg-config
+            rust
+          ];
+        };
       }
     );
 }
