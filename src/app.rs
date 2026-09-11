@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
+use std::ops::Div;
 use std::time::Duration;
 
 use chrono::{DateTime, Datelike, Local, NaiveTime, Weekday};
@@ -98,7 +99,11 @@ fn countdown_label(now: DateTime<Local>) -> String {
 	}
 
 	let target_today = now.date_naive().and_time(target);
-	let minutes_left = (target_today - now.naive_local()).num_minutes().max(0);
+	let minutes_left = (target_today - now.naive_local())
+		.as_seconds_f32()
+		.max(0_f32)
+		.div(60_f32)
+		.ceil() as u32;
 
 	if minutes_left == 1 {
 		format!("{minutes_left} min to 2PM")
@@ -112,20 +117,21 @@ mod tests {
 	use super::*;
 	use chrono::TimeZone;
 
-	fn at(h: u32, m: u32) -> DateTime<Local> {
-		Local.with_ymd_and_hms(2026, 9, 11, h, m, 0).unwrap()
+	fn at(h: u32, m: u32, s: u32) -> DateTime<Local> {
+		Local.with_ymd_and_hms(2026, 9, 11, h, m, s).unwrap()
 	}
 
 	#[test]
 	fn counts_down_before_2pm() {
-		assert_eq!(countdown_label(at(13, 45)), "15 mins to 2PM");
-		assert_eq!(countdown_label(at(13, 59)), "1 min to 2PM");
-		assert_eq!(countdown_label(at(9, 0)), "300 mins to 2PM");
+		assert_eq!(countdown_label(at(13, 45, 0)), "15 mins to 2PM");
+		assert_eq!(countdown_label(at(13, 59, 0)), "1 min to 2PM");
+		assert_eq!(countdown_label(at(9, 0, 0)), "300 mins to 2PM");
+		assert_eq!(countdown_label(at(13, 45, 30)), "15 mins to 2PM");
 	}
 
 	#[test]
 	fn shows_beer_at_and_after_2pm() {
-		assert_eq!(countdown_label(at(14, 0)), "🍺");
-		assert_eq!(countdown_label(at(23, 59)), "🍺");
+		assert_eq!(countdown_label(at(14, 0, 0)), "🍺");
+		assert_eq!(countdown_label(at(23, 59, 0)), "🍺");
 	}
 }
