@@ -1,0 +1,21 @@
+
+[package]
+name = "cosmic-applet-friday-countdown"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+description = "COSMIC panel applet: visible only on Fridays, counts down the minutes to 2 PM, then shows a beer emoji"
+
+[dependencies]
+chrono = "0.4"
+once_cell = "1"
+
+# libcosmic isn't published on crates.io — pull it straight from the
+# COSMIC toolkit repo, same as every other applet in pop-os/cosmic-applets.
+[dependencies.libcosmic]
+git = "https://github.com/pop-os/libcosmic"
+default-features = false
+features = ["applet", "tokio", "wgpu"]
+
+[profile.release]
+lto = true
