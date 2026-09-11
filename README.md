@@ -5,10 +5,10 @@ A tiny panel applet for the COSMIC desktop (System76's `cosmic-panel` / `cosmic-
 **Behavior**
 
 - Invisible every day except Friday.
-- On Friday, before 2 PM local time: shows the minutes remaining, e.g. `37 min to 2PM`.
+- On Friday, before 2 PM local time: shows the minutes remaining, e.g. `37 mins to 2PM`.
 - On Friday, at/after 2 PM local time: shows 🍺.
 
-It re-checks the clock every 30 seconds (see `TICK` in `src/app.rs`).
+It re-checks the clock every 10 seconds (see `TICK` in `src/app.rs`).
 
 ## Project layout
 
