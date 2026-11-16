@@ -8,14 +8,26 @@ description = "COSMIC panel applet: visible only on Fridays, counts down the min
 [dependencies]
 chrono = "0.4"
 tokio = { version = "1", features = ["time"] }
+# Only used to listen for logind's PrepareForSleep signal (wake from suspend).
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 
-# libcosmic isn't published on crates.io — pull it straight from the
-# COSMIC toolkit repo, same as every other applet in pop-os/cosmic-applets.
-# NB: the crate inside that repo is actually named `cosmic`, not `libcosmic`.
+# libcosmic isn't on crates.io (the crate in the repo is named `cosmic`).
+# No `rev =`: other git deps use the unpinned URL, so a rev would build a
+# second copy of libcosmic's crates; Cargo.lock pins the commit instead.
+# `applet` is all we need. No `wgpu`: iced renders with tiny-skia, like the
+# pop-os applets.
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = ["applet", "tokio", "wgpu"]
+features = ["applet"]
+
+[dev-dependencies]
+chrono-tz = "0.10"
+# Paused, auto-advancing time for testing the minute ticker, and a Unix
+# socket pair for a fake logind.
+tokio = { version = "1", features = ["net", "rt", "test-util"] }
+# Peer-to-peer connections, for a fake logind in tests.
+zbus = { version = "5", default-features = false, features = ["tokio", "p2p"] }
 
 [profile.release]
 lto = true
